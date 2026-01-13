@@ -18,11 +18,14 @@ Mini interview project implementing a product catalog service.
 
 ## Local setup
 
-- bash
 git clone https://github.com/mitkos/ecom-service.git
+
 cd ecom-service
+
 cp .env.example .env
+
 docker compose up -d --build
+
 docker compose exec web python /app/src/manage.py migrate
 
 ## Creating superuser for Django admin
