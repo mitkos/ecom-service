@@ -26,12 +26,23 @@ docker compose up --build
 ## Creating superuser for Django admin
 docker compose exec web python manage.py createsuperuser
 
-## Useful links
 
-# API
+## API
 http://localhost:8000/api/v1/  
+
+
 # API Docs
+
+Swagger UI:
 http://localhost:8000/api/docs/
+
+ReDoc:
+http://localhost:8000/api/redoc/
+
+OpenAPI schema:
+http://localhost:8000/api/schema/
+
+
 # Django Admin
 http://localhost:8000/admin/
 
