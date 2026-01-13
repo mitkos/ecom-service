@@ -22,6 +22,9 @@ class CategorySerializer(serializers.ModelSerializer):
             "is_active",
             "position",
         ]
+        read_only_fields = [
+            "id",
+        ]
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -46,7 +49,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate_price(self, value: Decimal) -> Decimal:
         if value is None:

@@ -9,6 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+
+
 from ecommerce.models import Category, Product
 
 from .serializers import CategorySerializer, ProductSerializer
@@ -64,6 +67,101 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ["position", "price", "created_at", "updated_at", "title", "id"]
     ordering = ["position", "-created_at"]
 
+    @extend_schema(
+        summary="Search products",
+        description=(
+            "Search and filter products using query parameters. "
+            "By default, only active products from active categories are returned. "
+            "Supports text search (title or SKU), exact SKU lookup, price range filtering, "
+            "category filtering with optional subtree inclusion, safe ordering, and pagination."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Text search: matches title (icontains) OR sku (iexact).",
+                examples=[
+                    # examples are optional; if your spectacular version supports them, this is nice
+                ],
+            ),
+            OpenApiParameter(
+                name="sku",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Exact SKU match (case-insensitive).",
+            ),
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Title contains (case-insensitive).",
+            ),
+            OpenApiParameter(
+                name="min_price",
+                type=OpenApiTypes.DECIMAL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Minimum price (inclusive). Example: 2.50",
+            ),
+            OpenApiParameter(
+                name="max_price",
+                type=OpenApiTypes.DECIMAL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Maximum price (inclusive). Example: 10.00",
+            ),
+            OpenApiParameter(
+                name="category",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Category ID to filter by.",
+            ),
+            OpenApiParameter(
+                name="category_tree",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="If true, includes products from active descendant categories.",
+            ),
+            OpenApiParameter(
+                name="is_active",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter by active flag. Defaults to true.",
+            ),
+            OpenApiParameter(
+                name="ordering",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Comma-separated ordering. Allowed: position, price, created_at, updated_at, title, id. Prefix with '-' for desc.",
+            ),
+            # Pagination params (Swagger will often show these automatically, but being explicit is fine)
+            OpenApiParameter(
+                name="page",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Page number (pagination).",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Page size (if enabled).",
+            ),
+        ],
+        responses=ProductSerializer(
+            many=True
+        ),  # OK, but paginated response is better; see note below
+    )
     @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
         """
