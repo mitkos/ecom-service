@@ -29,7 +29,7 @@ docker compose exec web python manage.py createsuperuser
 ## Useful links
 
 # API
-http://localhost:8000/api  
+http://localhost:8000/api/v1/  
 # API Docs
 http://localhost:8000/api/docs/
 # Django Admin
