@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from rest_framework import filters, viewsets
-from rest_framework import serializers
+from decimal import Decimal, InvalidOperation
+
+from django.db.models import Q
+
+from rest_framework import filters, status, viewsets, serializers
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 
 from ecommerce.models import Category, Product
@@ -55,11 +60,121 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().select_related("category")
     serializer_class = ProductSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "sku"]
-    ordering_fields = [
-        "position",
-        "price",
-        "created_at",
-        "title",
-    ]
+    search_fields = ["title", "sku", "slug"]
+    ordering_fields = ["position", "price", "created_at", "updated_at", "title", "id"]
     ordering = ["position", "-created_at"]
+
+    @action(detail=False, methods=["get"], url_path="search")
+    def search(self, request):
+        """
+        GET /api/v1/products/search/
+
+        Query params:
+          q=             -> title icontains OR sku iexact
+          sku=           -> sku exact
+          title=         -> title icontains
+          min_price=     -> price >=
+          max_price=     -> price <=
+          category=      -> category id
+          category_tree=1 -> include category descendants
+          is_active=true/false (default true)
+          ordering=price,-created_at,position
+        """
+        qs = Product.objects.all().select_related("category")
+
+        # is_active default true (common catalog behavior)
+        is_active_raw = request.query_params.get("is_active", "true").lower()
+        if is_active_raw in ("true", "1", "yes", "y", "on"):
+            qs = qs.filter(is_active=True)
+        elif is_active_raw in ("false", "0", "no", "n", "off"):
+            qs = qs.filter(is_active=False)
+        else:
+            return Response(
+                {"is_active": "Invalid boolean value."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        q = request.query_params.get("q")
+        if q:
+            qs = qs.filter(Q(title__icontains=q) | Q(sku__iexact=q))
+
+        sku = request.query_params.get("sku")
+        if sku:
+            qs = qs.filter(sku__iexact=sku)
+
+        title = request.query_params.get("title")
+        if title:
+            qs = qs.filter(title__icontains=title)
+
+        # price filters
+        min_price = request.query_params.get("min_price")
+        if min_price:
+            try:
+                qs = qs.filter(price__gte=Decimal(min_price))
+            except (InvalidOperation, ValueError):
+                return Response(
+                    {"min_price": "Invalid decimal value."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        max_price = request.query_params.get("max_price")
+        if max_price:
+            try:
+                qs = qs.filter(price__lte=Decimal(max_price))
+            except (InvalidOperation, ValueError):
+                return Response(
+                    {"max_price": "Invalid decimal value."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # category filtering
+        category_id = request.query_params.get("category")
+        category_tree = request.query_params.get("category_tree", "0").lower() in (
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        )
+
+        if category_id:
+            try:
+                category_obj = Category.objects.get(pk=int(category_id))
+            except (ValueError, Category.DoesNotExist):
+                return Response(
+                    {"category": "Invalid category id."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if category_tree:
+                ids = category_obj.descendant_ids()
+                qs = qs.filter(category_id__in=ids)
+            else:
+                qs = qs.filter(category=category_obj)
+
+        # ordering (reuse DRF OrderingFilter)
+        ordering_param = request.query_params.get("ordering")
+        if ordering_param:
+            # Validate ordering fields manually (avoid arbitrary field ordering)
+            allowed = set(self.ordering_fields)
+            requested = [p.strip() for p in ordering_param.split(",") if p.strip()]
+            normalized = []
+            for item in requested:
+                key = item.lstrip("-")
+                if key not in allowed:
+                    return Response(
+                        {"ordering": f"Invalid ordering field: {key}"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                normalized.append(item)
+            qs = qs.order_by(*normalized)
+        else:
+            qs = qs.order_by(*self.ordering)
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)

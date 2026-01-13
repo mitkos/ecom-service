@@ -47,6 +47,30 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def descendant_ids(self) -> list[int]:
+        """
+        Returns IDs of this category and all ACTIVE descendants.
+        Inactive categories are intentionally excluded.
+        """
+        if not self.is_active:
+            return []
+
+        ids: list[int] = []
+        to_visit: list[int] = [self.id]
+
+        while to_visit:
+            current_id = to_visit.pop()
+            ids.append(current_id)
+
+            children = Category.objects.filter(
+                parent_id=current_id,
+                is_active=True,
+            ).values_list("id", flat=True)
+
+            to_visit.extend(children)
+
+        return ids
+
 
 class Product(models.Model):
     sku = models.CharField(max_length=64, unique=True)
