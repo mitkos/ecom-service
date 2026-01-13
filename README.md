@@ -1,4 +1,40 @@
 
+# E-commerce Product Service
+
+Mini interview project implementing a product catalog service.
+
+## Tech Stack
+- Python 3.12
+- Django + Django REST Framework
+- PostgreSQL
+- Docker & Docker Compose
+
+## Features
+- Product CRUD
+- Category hierarchy (parent/child)
+- Search & filtering (name, SKU, price range, category)
+- Django Admin
+- API documentation (Swagger)
+
+## Local setup
+
+- bash
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+docker compose up --build
+
+## Creating superuser for Django admin
+docker compose exec web python manage.py createsuperuser
+
+## Useful links
+
+# API
+http://localhost:8000/api  
+# API Docs
+http://localhost:8000/api/docs/
+# Django Admin
+http://localhost:8000/admin/
+
 
 ## Media storage
 
