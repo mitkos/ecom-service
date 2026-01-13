@@ -1,4 +1,17 @@
 from django.db import models
+from datetime import date
+import os
+import uuid
+
+
+def product_image_upload_to(instance: "Product", filename: str) -> str:
+    """
+    Store uploads under products/YYYY/MM/DD/ with a safe unique name.
+    """
+    today = date.today()
+    base, ext = os.path.splitext(filename)
+    ext = ext.lower()[:10]  # keep extension reasonable
+    return f"products/{today:%Y/%m/%d}/{uuid.uuid4().hex}{ext}"
 
 
 class Category(models.Model):
@@ -32,6 +45,12 @@ class Product(models.Model):
     sku = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+
+    image = models.ImageField(
+        upload_to=product_image_upload_to,
+        blank=True,
+        null=True,
+    )
 
     price = models.DecimalField(max_digits=12, decimal_places=2)
 

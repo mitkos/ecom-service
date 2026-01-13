@@ -110,6 +110,14 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+
+# Media storage:
+# Local filesystem for development.
+# In production, this would be replaced by object storage + CDN.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR.parent / "media"
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
