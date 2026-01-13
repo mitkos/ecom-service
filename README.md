@@ -55,3 +55,10 @@ and persisted via a Docker volume.
 In a production environment, media files would typically be stored in
 object storage (e.g. S3-compatible storage) and served via a CDN.
 This is intentionally out of scope for this assignment.
+
+
+Run unit tests:
+docker compose run --rm web pytest
+
+Seed dev data for manual testing:
+docker compose exec web python /app/src/manage.py seed_dev
