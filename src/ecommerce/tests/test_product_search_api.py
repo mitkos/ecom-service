@@ -10,7 +10,6 @@ pytestmark = pytest.mark.django_db
 
 
 def _url() -> str:
-    # router action name: product-search if basename="product"
     return reverse("product-search")
 
 
@@ -23,13 +22,10 @@ def api_client() -> APIClient:
 def categories():
     """
     Food store tree:
-
       Food Store
         Fruits & Vegetables
           Fresh Fruit
             Citrus
-
-    This shape is ideal to test category_tree behavior.
     """
     root = Category.objects.create(
         name="Food Store",
@@ -97,7 +93,7 @@ def products(categories):
         description="Milk 1L.",
         price="1.60",
         currency="EUR",
-        category=root,  # intentionally root to test non-leaf behavior too
+        category=root,
         is_active=True,
         position=3,
     )

@@ -44,7 +44,6 @@ class ProductAdmin(admin.ModelAdmin):
     list_per_page = 50
     list_select_related = ("category",)
 
-    # Admin UI convenience only (does NOT affect API)
     prepopulated_fields = {"slug": ("title",)}
 
     readonly_fields = ("image_preview", "created_at", "updated_at")

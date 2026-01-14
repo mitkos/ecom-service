@@ -14,8 +14,8 @@ from ecommerce.models import Category, Product
 
 try:
     from PIL import Image
-except Exception:  # pragma: no cover
-    Image = None  # type: ignore
+except Exception:
+    Image = None
 
 
 class Command(BaseCommand):

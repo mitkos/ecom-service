@@ -82,9 +82,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY,
                 required=False,
                 description="Text search: matches title (icontains) OR sku (iexact).",
-                examples=[
-                    # examples are optional; if your spectacular version supports them, this is nice
-                ],
+                examples=[],
             ),
             OpenApiParameter(
                 name="sku",
@@ -142,7 +140,6 @@ class ProductViewSet(viewsets.ModelViewSet):
                 required=False,
                 description="Comma-separated ordering. Allowed: position, price, created_at, updated_at, title, id. Prefix with '-' for desc.",
             ),
-            # Pagination params (Swagger will often show these automatically, but being explicit is fine)
             OpenApiParameter(
                 name="page",
                 type=OpenApiTypes.INT,
@@ -158,9 +155,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 description="Page size (if enabled).",
             ),
         ],
-        responses=ProductSerializer(
-            many=True
-        ),  # OK, but paginated response is better; see note below
+        responses=ProductSerializer(many=True),
     )
     @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
@@ -180,7 +175,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         qs = Product.objects.all().select_related("category")
 
-        # is_active default true (common catalog behavior)
         is_active_raw = request.query_params.get("is_active", "true").lower()
         if is_active_raw in ("true", "1", "yes", "y", "on"):
             qs = qs.filter(is_active=True)
@@ -250,7 +244,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             else:
                 qs = qs.filter(category=category_obj)
 
-        # ordering (reuse DRF OrderingFilter)
         ordering_param = request.query_params.get("ordering")
         if ordering_param:
             # Validate ordering fields manually (avoid arbitrary field ordering)
